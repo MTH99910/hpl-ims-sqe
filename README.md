@@ -25,6 +25,15 @@ The system is designed to manage two primary categories of inventory items: stat
 
 The requisition module implements a multi-step approval workflow where employees (initiators) can request items, department heads (HODs) can approve or reject requests, and administrators can issue the approved items. This ensures proper accountability and control over inventory usage throughout the organization.
 
+## Screenshots
+
+The project includes sample screenshots demonstrating the user interface and key functionality.
+
+![Dashboard view showing system overview](screenshots/img1.png)
+![Requisition workflow interface](screenshots/img2.png)
+To view these screenshots, navigate to the screenshots directory in the project root. These images provide visual reference for the application's layout and user experience.
+
+
 ## Features
 
 ### Core Features
@@ -280,19 +289,6 @@ The item suggestions endpoint provides autocomplete functionality for requisitio
 ### Notification API
 
 The notifications list endpoint returns a list of notifications for the authenticated user. Individual notification endpoints support marking notifications as read. A bulk read endpoint marks all notifications as read at once.
-
-## Screenshots
-
-The project includes sample screenshots demonstrating the user interface and key functionality.
-
-| Screenshot | Description |
-|------------|-------------|
-| screenshots/img1.png | Dashboard view showing system overview |
-| screenshots/img2.png | Requisition workflow interface |
-
-To view these screenshots, navigate to the screenshots directory in the project root. These images provide visual reference for the application's layout and user experience.
-
----
 
 ## License
 
