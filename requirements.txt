@@ -1,0 +1,6 @@
+django>=4.2,<5.0
+django-crispy-forms>=2.0
+crispy-bootstrap5>=0.7
+Pillow>=9.0
+pandas>=2.0
+openpyxl>=3.0

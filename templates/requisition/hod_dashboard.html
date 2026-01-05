@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}HOD Dashboard - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Department Approval Dashboard</h1>
+    <div class="badge bg-warning text-dark fs-6">
+        {{ user.department.name }} Department
+    </div>
+</div>
+
+<!-- Stats Cards - Clickable -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'requisition:list' %}?status=pending_hod" class="text-decoration-none">
+            <div class="card text-white bg-warning h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Pending Approvals</h6>
+                            <h2 class="mt-2">{{ approval_count }}</h2>
+                        </div>
+                        <i class="bi bi-check-square fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view pending</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'requisition:list' %}" class="text-decoration-none">
+            <div class="card text-white bg-primary h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Department Requests</h6>
+                            <h2 class="mt-2">{{ dept_requests }}</h2>
+                        </div>
+                        <i class="bi bi-people fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view all</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'requisition:list' %}?status=authorized" class="text-decoration-none">
+            <div class="card text-white bg-success h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Approved</h6>
+                            <h2 class="mt-2">{{ approved_count|default:0 }}</h2>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view approved</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Pending Approvals -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>Pending Approvals
+        </h5>
+        <span class="badge bg-warning text-dark">{{ pending_approvals|length }} requests</span>
+    </div>
+    <div class="card-body p-0">
+        {% if pending_approvals %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Requisition #</th>
+                        <th>Initiator</th>
+                        <th>Purpose</th>
+                        <th>Items</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_approvals %}
+                    <tr>
+                        <td><strong>{{ req.requisition_number }}</strong></td>
+                        <td>
+                            {{ req.initiator.get_full_name }}
+                            <br>
+                            <small class="text-muted">{{ req.initiator.username }}</small>
+                        </td>
+                        <td>{{ req.purpose|truncatechars:50 }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ req.items.count }} items</span>
+                            <br>
+                            <small class="text-muted">Total: {{ req.get_total_requested }}</small>
+                        </td>
+                        <td>{{ req.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'requisition:hod_approval' req.pk %}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-check-square me-1"></i>Review
+                            </a>
+                            <a href="{% url 'requisition:detail' req.pk %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle text-success fs-1 d-block mb-2"></i>
+            <p class="text-muted mb-0">No pending approvals for your department</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Approvals -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-clock-history me-2"></i>Recent Actions
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_approvals %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Requisition #</th>
+                        <th>Initiator</th>
+                        <th>Status</th>
+                        <th>Action Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_approvals %}
+                    <tr>
+                        <td><strong>{{ req.requisition_number }}</strong></td>
+                        <td>{{ req.initiator.get_full_name }}</td>
+                        <td>
+                            <span class="badge {{ req.get_status_badge }}">
+                                {{ req.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ req.hod_action_date|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'requisition:detail' req.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <p class="text-muted mb-0">No recent actions</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}

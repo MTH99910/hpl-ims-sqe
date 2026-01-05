@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}My Requisitions - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">My Requisitions</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'requisition:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>New Requisition
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards - Clickable -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <a href="{% url 'requisition:list' %}" class="text-decoration-none">
+            <div class="card text-white bg-primary h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Requests</h6>
+                            <h2 class="mt-2">{{ my_requisitions|length }}</h2>
+                        </div>
+                        <i class="bi bi-file-earmark-text fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view all</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'requisition:list' %}?status=pending_hod" class="text-decoration-none">
+            <div class="card text-white bg-warning h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Pending</h6>
+                            <h2 class="mt-2">{{ pending_count }}</h2>
+                        </div>
+                        <i class="bi bi-clock-history fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view pending</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'requisition:list' %}?status=sent_back" class="text-decoration-none">
+            <div class="card text-white bg-info h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Sent Back</h6>
+                            <h2 class="mt-2">{{ sent_back_count }}</h2>
+                        </div>
+                        <i class="bi bi-arrow-repeat fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view sent back</small>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'requisition:list' %}?status=issued" class="text-decoration-none">
+            <div class="card text-white bg-success h-100 kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Completed</h6>
+                            <h2 class="mt-2">{{ completed_count }}</h2>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Click to view completed</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Sent Back Requisitions (Needs Attention) -->
+{% if sent_back_requisitions %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Requisitions Sent Back for Revision
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Requisition #</th>
+                        <th>Items</th>
+                        <th>Purpose</th>
+                        <th>HOD Feedback</th>
+                        <th>Sent Back</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in sent_back_requisitions %}
+                    <tr>
+                        <td><strong>{{ req.requisition_number }}</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ req.items.count }} items</span>
+                            <br>
+                            <small class="text-muted">Total: {{ req.get_total_requested }}</small>
+                        </td>
+                        <td>{{ req.purpose|truncatechars:30 }}</td>
+                        <td>
+                            {% if req.sent_back_reason %}
+                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                    data-bs-toggle="modal" data-bs-target="#feedbackModal{{ req.pk }}">
+                                <i class="bi bi-chat-dots me-1"></i>View Feedback
+                            </button>
+                            
+                            <!-- Feedback Modal -->
+                            <div class="modal fade" id="feedbackModal{{ req.pk }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title">HOD Feedback</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-2">
+                                                <strong>Requisition:</strong> {{ req.requisition_number }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Sent back by:</strong> {{ req.hod_approver.get_full_name }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Date:</strong> {{ req.sent_back_at|date:"M d, Y H:i" }}
+                                            </div>
+                                            <hr>
+                                            <div class="alert alert-info">
+                                                {{ req.sent_back_reason|linebreaks }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <a href="{% url 'requisition:update' req.pk %}" class="btn btn-primary">
+                                                <i class="bi bi-arrow-repeat me-1"></i>Resubmit with Changes
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.sent_back_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'requisition:update' req.pk %}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-arrow-repeat me-1"></i>Resubmit
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- My Requisitions -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2"></i>My Requisition History
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if my_requisitions %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Requisition #</th>
+                        <th>Items</th>
+                        <th>Purpose</th>
+                        <th>HOD</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in my_requisitions %}
+                    <tr>
+                        <td><strong>{{ req.requisition_number }}</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ req.items.count }} items</span>
+                            <br>
+                            <small class="text-muted">Total: {{ req.get_total_requested }}</small>
+                        </td>
+                        <td>{{ req.purpose|truncatechars:40 }}</td>
+                        <td>
+                            {% if req.hod_approver %}
+                            {{ req.hod_approver.get_full_name }}
+                            {% else %}
+                            <span class="text-muted">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ req.get_status_badge }}">
+                                {{ req.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ req.created_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'requisition:detail' req.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox text-muted fs-1 d-block mb-2"></i>
+            <p class="text-muted mb-3">You haven't created any requisitions yet</p>
+            <a href="{% url 'requisition:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Create Your First Requisition
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}

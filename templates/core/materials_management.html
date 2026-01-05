@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Materials Management - HPL Inventory Management{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Materials Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:super_admin_dashboard' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            <i class="bi bi-file-earmark-excel me-1"></i>Upload Excel
+        </button>
+        <a href="{% url 'inventory:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add Item
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Items</h6>
+                        <h2 class="mt-2">{{ total_items }}</h2>
+                    </div>
+                    <i class="bi bi-boxes fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Active Items</h6>
+                        <h2 class="mt-2">{{ active_items }}</h2>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Low Stock</h6>
+                        <h2 class="mt-2">{{ low_stock_items }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">By Type</h6>
+                        <h6 class="mt-2">Stationery: {{ stationery_count }} | Housekeeping: {{ housekeeping_count }}</h6>
+                    </div>
+                    <i class="bi bi-grid fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Items Table -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-boxes me-2"></i>Inventory Items
+        </h5>
+        <a href="{% url 'inventory:list' %}" class="btn btn-outline-primary btn-sm">View All</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_items %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Material Code</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>UOM</th>
+                        <th>Quantity</th>
+                        <th>Reorder Level</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in recent_items %}
+                    <tr>
+                        <td><strong>{{ item.material_code }}</strong></td>
+                        <td>{{ item.description|truncatechars:40 }}</td>
+                        <td>
+                            <span class="badge {% if item.item_type == 'stationery' %}bg-primary{% else %}bg-info{% endif %}">
+                                {{ item.item_type }}
+                            </span>
+                        </td>
+                        <td>{{ item.unit_of_measurement }}</td>
+                        <td>
+                            {% if item.quantity_total <= item.reorder_level %}
+                            <span class="text-danger fw-bold">{{ item.quantity_total }}</span>
+                            {% else %}
+                            {{ item.quantity_total }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.reorder_level }}</td>
+                        <td>{{ item.location.code|default:'N/A' }}</td>
+                        <td>
+                            {% if item.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-boxes text-muted fs-1 d-block mb-2"></i>
+            <p class="text-muted mb-3">No items found</p>
+            <a href="{% url 'inventory:create' %}" class="btn btn-primary">Add First Item</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Excel Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="uploadModalLabel">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Upload Items from Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Excel/CSV File</label>
+                    <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls,.csv">
+                    <div class="form-text">
+                        Required columns: material_code, description, item_type, unit_of_measurement, quantity_total
+                        <br>
+                        Optional columns: reorder_level, location
+                    </div>
+                </div>
+                <div id="uploadProgress" class="d-none">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
+                    <p class="text-center mt-2">Processing...</p>
+                </div>
+                <div id="uploadResult" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="uploadExcel()">
+                    <i class="bi bi-upload me-1"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+function uploadExcel() {
+    var fileInput = document.getElementById('excelFile');
+    var file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file first');
+        return;
+    }
+    
+    var formData = new FormData();
+    formData.append('file', file);
+    
+    // Show progress
+    document.getElementById('uploadProgress').classList.remove('d-none');
+    document.getElementById('uploadResult').classList.add('d-none');
+    
+    fetch('/core/super-admin/upload-items/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('uploadProgress').classList.add('d-none');
+        document.getElementById('uploadResult').classList.remove('d-none');
+        
+        if (data.success) {
+            document.getElementById('uploadResult').innerHTML = 
+                '<div class="alert alert-success">' + data.message + '</div>';
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            document.getElementById('uploadResult').innerHTML = 
+                '<div class="alert alert-danger">' + data.error + '</div>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('uploadProgress').classList.add('d-none');
+        document.getElementById('uploadResult').classList.remove('d-none');
+        document.getElementById('uploadResult').innerHTML = 
+            '<div class="alert alert-danger">An error occurred: ' + error + '</div>';
+    });
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

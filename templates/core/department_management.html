@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Department Management - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Department Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:super_admin_dashboard' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+        <a href="{% url 'core:department_create' %}" class="btn btn-primary">
+            <i class="bi bi-building me-1"></i>Add Department
+        </a>
+    </div>
+</div>
+
+<!-- Departments Table -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="bi bi-building me-2"></i>Departments ({{ departments|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if departments %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Department</th>
+                        <th>Code</th>
+                        <th>Users</th>
+                        <th>Requisitions</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in departments %}
+                    <tr>
+                        <td><strong>{{ dept.name }}</strong></td>
+                        <td><code>{{ dept.code }}</code></td>
+                        <td>
+                            <span class="badge bg-primary">{{ dept.user_count }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ dept.requisition_count }}</span>
+                        </td>
+                        <td>
+                            {% if dept.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'core:department_update' dept.pk %}" class="btn btn-outline-primary btn-sm" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if dept.user_count == 0 and dept.requisition_count == 0 %}
+                            <a href="{% url 'core:department_delete' dept.pk %}" class="btn btn-outline-danger btn-sm" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-building text-muted fs-1 d-block mb-2"></i>
+            <p class="text-muted mb-3">No departments found</p>
+            <a href="{% url 'core:department_create' %}" class="btn btn-primary">Add First Department</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

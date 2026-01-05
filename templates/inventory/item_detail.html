@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ item.material_code }} - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 d-inline">{{ item.material_code }}</h1>
+        <span class="badge {{ item.get_type_badge }} ms-2">{{ item.get_item_type_display }}</span>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'inventory:list' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-2"></i>Back to List
+        </a>
+        {% if user.is_admin %}
+        <a href="{% url 'inventory:update' item.pk %}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-pencil me-2"></i>Edit
+        </a>
+        <a href="{% url 'inventory:adjust' item.pk %}" class="btn btn-outline-warning">
+            <i class="bi bi-gear me-2"></i>Adjust Stock
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Item Details -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- Basic Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Item Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Material Code</label>
+                        <p class="mb-0 fw-bold">{{ item.material_code }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Item Type</label>
+                        <p class="mb-0">
+                            <span class="badge {{ item.get_type_badge }}">
+                                <i class="bi {{ item.get_type_icon }} me-1"></i>
+                                {{ item.get_item_type_display }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="text-muted small">Description</label>
+                        <p class="mb-0">{{ item.description }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Unit of Measurement</label>
+                        <p class="mb-0">{{ item.get_unit_of_measurement_display }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Location</label>
+                        <p class="mb-0">
+                            {% if item.location %}
+                            <span class="badge bg-secondary">{{ item.location.code }}</span>
+                            {{ item.location.name }}
+                            {% else %}
+                            <span class="text-muted">Not assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transaction History -->
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Transaction History</h5>
+                <span class="badge bg-secondary">{{ transactions|length }} records</span>
+            </div>
+            <div class="card-body p-0">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Balance</th>
+                                <th>Reference</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                            <tr>
+                                <td>{{ txn.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if txn.transaction_type == 'inward' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ txn.get_transaction_type_display }}
+                                    </span>
+                                </td>
+                                <td class="fw-bold {% if txn.quantity_change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ txn.get_quantity_display }}
+                                </td>
+                                <td>{{ txn.balance_after }}</td>
+                                <td>
+                                    {% if txn.reference %}
+                                    {{ txn.reference }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>{{ txn.user.username|default:"System" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No transactions recorded</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Stock Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Stock Information</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold {% if item.quantity_total == 0 %}text-danger{% elif item.is_low_stock %}text-warning{% else %}text-success{% endif %}">
+                    {{ item.quantity_total }}
+                </div>
+                <p class="text-muted mb-3">{{ item.get_unit_of_measurement_display }} in stock</p>
+                
+                <div class="badge {{ item.get_stock_badge }} mb-3">
+                    {% if item.quantity_total == 0 %}Out of Stock
+                    {% elif item.is_low_stock %}Low Stock
+                    {% else %}In Stock{% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Reorder Level:</span>
+                    <span class="fw-bold">{{ item.reorder_level }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Last Updated:</span>
+                    <span>{{ item.updated_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        {% if user.is_admin %}
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'inventory:adjust' item.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-gear me-2"></i>Adjust Stock
+                    </a>
+                    <a href="{% url 'inventory:update' item.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil me-2"></i>Edit Item Details
+                    </a>
+                    <a href="{% url 'inventory:list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

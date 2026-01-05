@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+
+{% block title %}HOD Approval - {{ requisition.requisition_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-card {
+        border-left: 4px solid #0d6efd;
+    }
+    .action-card.authorize {
+        border-left-color: #198754;
+    }
+    .action-card.send-back {
+        border-left-color: #0dcaf0;
+    }
+    .action-card.reject {
+        border-left-color: #dc3545;
+    }
+    .conditional-field {
+        display: none;
+    }
+    .conditional-field.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 d-inline">HOD Approval</h1>
+        <span class="badge {{ requisition.get_status_badge }} ms-2">{{ requisition.get_status_display }}</span>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'requisition:hod_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Requisition Details -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- Request Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Request Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Requisition Number</label>
+                        <p class="mb-0 fw-bold fs-5">{{ requisition.requisition_number }}</p>
+                    </div>
+                    <div class=" mb-3">
+                        <label classcol-md-6="text-muted small">Department</label>
+                        <p class="mb-0">{{ requisition.department }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Initiator</label>
+                        <p class="mb-0 fw-bold">{{ requisition.initiator.get_full_name }}</p>
+                        <small class="text-muted">{{ requisition.initiator.username }}</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Requested Date</label>
+                        <p class="mb-0">{{ requisition.created_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="text-muted small">Purpose</label>
+                        <p class="mb-0">{{ requisition.purpose }}</p>
+                    </div>
+                    {% if requisition.notes %}
+                    <div class="col-12">
+                        <label class="text-muted small">Additional Notes</label>
+                        <p class="mb-0">{{ requisition.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Line Items -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Requested Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th class="text-center">Quantity</th>
+                                <th>UOM</th>
+                                <th>Stock Available</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in line_items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.item.material_code }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <span class="badge {% if item.item.item_type == 'stationery' %}bg-primary{% else %}bg-info{% endif %}">
+                                            {{ item.item.get_item_type_display }}
+                                        </span>
+                                    </small>
+                                </td>
+                                <td>{{ item.item.description }}</td>
+                                <td class="text-center fw-bold">{{ item.quantity_requested }}</td>
+                                <td>{{ item.get_uom_display }}</td>
+                                <td>
+                                    <span class="{% if item.item.quantity_total < item.quantity_requested %}text-danger fw-bold{% endif %}">
+                                        {{ item.item.quantity_total }} {{ item.item.get_unit_of_measurement_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Approval Form -->
+        <div class="card action-card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Your Decision</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="hodActionForm">
+                    {% csrf_token %}
+                    
+                    <!-- Hidden status and action fields -->
+                    {{ form.status }}
+                    <input type="hidden" name="action" id="id_action" value="">
+                    
+                    <!-- Action Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Select Action *</label>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100 action-option authorize" 
+                                     onclick="selectAction('authorized')">
+                                    <input class="form-check-input" type="radio" name="action_radio" 
+                                           id="action_authorized" value="authorized">
+                                    <label class="form-check-label w-100" for="action_authorized">
+                                        <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>
+                                        <strong>Authorize</strong>
+                                        <small class="d-block text-muted">Approve and send to Admin</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100 action-option send-back"
+                                     onclick="selectAction('sent_back')">
+                                    <input class="form-check-input" type="radio" name="action_radio" 
+                                           id="action_sent_back" value="sent_back">
+                                    <label class="form-check-label w-100" for="action_sent_back">
+                                        <i class="bi bi-arrow-repeat text-info fs-3 d-block mb-2"></i>
+                                        <strong>Send Back</strong>
+                                        <small class="d-block text-muted">Return for revision</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100 action-option reject"
+                                     onclick="selectAction('rejected')">
+                                    <input class="form-check-input" type="radio" name="action_radio" 
+                                           id="action_rejected" value="rejected">
+                                    <label class="form-check-label w-100" for="action_rejected">
+                                        <i class="bi bi-x-circle text-danger fs-3 d-block mb-2"></i>
+                                        <strong>Reject</strong>
+                                        <small class="d-block text-muted">Reject the request</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        {% if form.action.errors %}
+                        <div class="text-danger small mt-2">{{ form.action.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- General Notes (for all actions) -->
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Additional Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Optional notes for the Admin or initiator.</div>
+                    </div>
+                    
+                    <!-- Conditional Fields -->
+                    
+                    <!-- Send Back Reason -->
+                    <div class="mb-3 conditional-field" id="sendBackReasonField">
+                        <label for="{{ form.sent_back_reason.id_for_label }}" class="form-label fw-bold text-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Comments for Revision *
+                        </label>
+                        {{ form.sent_back_reason }}
+                        {% if form.sent_back_reason.errors %}
+                        <div class="text-danger small">{{ form.sent_back_reason.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Please provide clear comments explaining what needs to be revised so the initiator can make the necessary changes.</div>
+                    </div>
+                    
+                    <!-- Rejection Reason -->
+                    <div class="mb-3 conditional-field" id="rejectionReasonField">
+                        <label for="{{ form.rejection_reason.id_for_label }}" class="form-label fw-bold text-danger">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Reason for Rejection *
+                        </label>
+                        {{ form.rejection_reason }}
+                        {% if form.rejection_reason.errors %}
+                        <div class="text-danger small">{{ form.rejection_reason.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">This reason will be visible to the initiator. Please be specific about why the request is rejected.</div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'requisition:hod_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="bi bi-check-lg me-2"></i>Submit Decision
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Workflow Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Approval Workflow</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-check"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Initiator Created</div>
+                                <small class="text-muted">{{ requisition.initiator.get_full_name }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Awaiting Your Approval</div>
+                                <small class="text-muted">Current Step</small>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-person-check"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Admin Issuance</div>
+                                <small class="text-muted">Next Step</small>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Requisition Summary -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Items:</span>
+                    <span class="fw-bold">{{ line_items|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Quantity:</span>
+                    <span class="fw-bold">{{ requisition.get_total_requested }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Request Date:</span>
+                    <span>{{ requisition.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectAction(action) {
+    // Update the radio button
+    document.querySelector(`input[name="action_radio"][value="${action}"]`).checked = true;
+    
+    // Update hidden status and action fields
+    document.getElementById('id_status').value = action;
+    document.getElementById('id_action').value = action;
+    
+    // Hide all conditional fields first
+    document.getElementById('sendBackReasonField').classList.remove('active');
+    document.getElementById('rejectionReasonField').classList.remove('active');
+    
+    // Remove selected class from all action options
+    document.querySelectorAll('.action-option').forEach(el => {
+        el.classList.remove('border-primary', 'bg-light');
+    });
+    
+    // Show appropriate conditional field and highlight selected option
+    const selectedOption = document.querySelector(`#action_${action}`).closest('.action-option');
+    selectedOption.classList.add('border-primary', 'bg-light');
+    
+    if (action === 'sent_back') {
+        document.getElementById('sendBackReasonField').classList.add('active');
+        document.getElementById('id_sent_back_reason').required = true;
+        document.getElementById('id_rejection_reason').required = false;
+    } else if (action === 'rejected') {
+        document.getElementById('rejectionReasonField').classList.add('active');
+        document.getElementById('id_rejection_reason').required = true;
+        document.getElementById('id_sent_back_reason').required = false;
+    } else {
+        document.getElementById('id_sent_back_reason').required = false;
+        document.getElementById('id_rejection_reason').required = false;
+    }
+    
+    // Enable submit button
+    document.getElementById('submitBtn').disabled = false;
+}
+
+// Handle form validation before submit
+document.getElementById('hodActionForm').addEventListener('submit', function(e) {
+    const action = document.querySelector('input[name="action_radio"]:checked');
+    
+    if (!action) {
+        e.preventDefault();
+        alert('Please select an action before submitting.');
+        return false;
+    }
+    
+    // Additional validation is handled by Django form
+    return true;
+});
+</script>
+{% endblock %}

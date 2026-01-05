@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Update{% else %}Create{% endif %} Item - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-box{% if object %}-seam{% else %}es{% endif %} me-2"></i>
+        {% if object %}Update Item{% else %}Add New Material{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:materials_management' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-2"></i>Back to Materials
+        </a>
+        <a href="{% url 'inventory:list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-list me-2"></i>View All Items
+        </a>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-4">
+        <!-- Left Column - Item Details -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.material_code.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-upc me-1"></i>Material Code <span class="text-danger">*</span>
+                            </label>
+                            {{ form.material_code }}
+                            {% if form.material_code.errors %}<div class="text-danger small mt-1">{{ form.material_code.errors }}</div>{% endif %}
+                            <div class="form-text">Unique identifier (e.g., ST001, HK001)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.item_type.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-tag me-1"></i>Item Type <span class="text-danger">*</span>
+                            </label>
+                            {{ form.item_type }}
+                            {% if form.item_type.errors %}<div class="text-danger small mt-1">{{ form.item_type.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-1"></i>Description <span class="text-danger">*</span>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                            <div class="form-text">Detailed description of the item</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Information Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Storage & Measurement</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.unit_of_measurement.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-rulers me-1"></i>Unit of Measurement <span class="text-danger">*</span>
+                            </label>
+                            {{ form.unit_of_measurement }}
+                            {% if form.unit_of_measurement.errors %}<div class="text-danger small mt-1">{{ form.unit_of_measurement.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-pin-map me-1"></i>Storage Location
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Quantity & Status -->
+        <div class="col-lg-4">
+            <!-- Inventory Quantity Card -->
+            <div class="card mb-4 shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-stack me-2"></i>Inventory Quantity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="{{ form.quantity_total.id_for_label }}" class="form-label fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i>Initial Quantity <span class="text-danger">*</span>
+                        </label>
+                        {{ form.quantity_total }}
+                        {% if form.quantity_total.errors %}<div class="text-danger small mt-1">{{ form.quantity_total.errors }}</div>{% endif %}
+                        <div class="form-text">Current stock quantity</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.reorder_level.id_for_label }}" class="form-label fw-semibold">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Reorder Level <span class="text-danger">*</span>
+                        </label>
+                        {{ form.reorder_level }}
+                        {% if form.reorder_level.errors %}<div class="text-danger small mt-1">{{ form.reorder_level.errors }}</div>{% endif %}
+                        <div class="form-text">Alert when stock falls below this level</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-toggle-on me-2"></i>Item Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            <strong>Active</strong> - Item is available for requisitions
+                        </label>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Inactive items won't appear in requisition search results.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg me-2"></i>
+                    {% if object %}Update Item{% else %}Add Item{% endif %}
+                </button>
+                <a href="{% url 'core:materials_management' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-2"></i>Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

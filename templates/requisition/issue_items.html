@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Items - {{ requisition.requisition_number }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 d-inline">Issue Items</h1>
+        <span class="badge {{ requisition.get_status_badge }} ms-2">{{ requisition.get_status_display }}</span>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'requisition:admin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Requisition Details -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <!-- Request Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Request Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Requisition Number</label>
+                        <p class="mb-0 fw-bold fs-5">{{ requisition.requisition_number }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Department</label>
+                        <p class="mb-0">{{ requisition.department }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Initiator</label>
+                        <p class="mb-0 fw-bold">{{ requisition.initiator.get_full_name }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">HOD Approver</label>
+                        <p class="mb-0">
+                            {% if requisition.hod_approver %}
+                            {{ requisition.hod_approver.get_full_name }}
+                            {% else %}
+                            <span class="text-muted">Not assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="text-muted small">Purpose</label>
+                        <p class="mb-0">{{ requisition.purpose }}</p>
+                    </div>
+                    {% if requisition.hod_action_date %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">Approved Date</label>
+                        <p class="mb-0">{{ requisition.hod_action_date|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Issue Form -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-box-seam me-2"></i>Issue Items
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Line Items for Issuing -->
+                    {{ formset.management_form }}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-center">Requested</th>
+                                    <th class="text-center">Issue Qty *</th>
+                                    <th>Available</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for form in formset %}
+                                <tr>
+                                    <td>
+                                        {{ form.id }}
+                                        <input type="hidden" name="{{ form.prefix }}-requisition" value="{{ requisition.pk }}">
+                                        <strong>{{ form.instance.item.material_code }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ form.instance.item.description|truncatechars:30 }}</small>
+                                        <input type="hidden" name="{{ form.prefix }}-item" value="{{ form.instance.item.pk }}">
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-bold">{{ form.instance.quantity_requested }}</span>
+                                        {{ form.instance.get_uom_display }}
+                                    </td>
+                                    <td class="text-center">
+                                        {{ form.quantity_issued }}
+                                        {% if form.quantity_issued.errors %}
+                                        <div class="text-danger small">{{ form.quantity_issued.errors }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if form.instance.item.quantity_total < form.instance.quantity_requested %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ form.instance.item.quantity_total }} {{ form.instance.item.get_unit_of_measurement_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ form.notes }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> You can issue partial quantities. Enter 0 to not issue an item.
+                        Stock will be deducted based on the quantities you enter above.
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a href="{% url 'requisition:admin_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-box-seam me-2"></i>Issue Items & Complete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Workflow Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Issuance Workflow</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-check"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Initiator Created</div>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-check"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">HOD Approved</div>
+                                <small class="text-muted">{{ requisition.hod_approver.get_full_name }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 32px; height: 32px;">
+                                <i class="bi bi-person-check"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Issue Items</div>
+                                <small class="text-muted">Current Step</small>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Summary -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Issuance Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Items:</span>
+                    <span class="fw-bold">{{ line_items|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Requested:</span>
+                    <span class="fw-bold">{{ requisition.get_total_requested }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Approved Date:</span>
+                    <span>{{ requisition.hod_action_date|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

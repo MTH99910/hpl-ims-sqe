@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Update User{% else %}Create User{% endif %} - HPL Inventory Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-{% if object %}gear{% else %}plus{% endif %} me-2"></i>
+        {% if object %}Update User{% else %}Create New User{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:user_management' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+</div>
+
+<form method="post" id="userForm">
+    {% csrf_token %}
+    <div class="row g-4">
+        <!-- Left Column - Personal & Role Info -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person me-2"></i>Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person-vcard me-1"></i>First Name <span class="text-danger">*</span>
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person-vcard me-1"></i>Last Name <span class="text-danger">*</span>
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-1"></i>Email
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-telephone me-1"></i>Phone
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Account Credentials</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-at me-1"></i>Username <span class="text-danger">*</span>
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors }}</div>{% endif %}
+                            <div class="form-text">Used for login. Must be unique.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.employee_id.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-badge-id me-1"></i>Employee ID
+                            </label>
+                            {{ form.employee_id }}
+                            {% if form.employee_id.errors %}<div class="text-danger small mt-1">{{ form.employee_id.errors }}</div>{% endif %}
+                        </div>
+                        {% if not object %}
+                        <div class="col-md-6">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-key me-1"></i>Password <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}<div class="text-danger small mt-1">{{ form.password1.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-key-fill me-1"></i>Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Role & Department -->
+        <div class="col-lg-4">
+            <!-- Role Card -->
+            <div class="card mb-4 shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Role Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <label for="{{ form.role.id_for_label }}" class="form-label fw-semibold">
+                        Select Role <span class="text-danger">*</span>
+                    </label>
+                    {{ form.role }}
+                    {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors }}</div>{% endif %}
+                    
+                    <div class="mt-3 p-3 bg-light rounded" id="role-info">
+                        <div id="role-desc-super_admin" class="role-desc" style="display:none;">
+                            <span class="badge bg-danger mb-2">Super Admin</span>
+                            <p class="small mb-0">Full system access. Can manage all users, departments, inventory and settings.</p>
+                        </div>
+                        <div id="role-desc-admin" class="role-desc" style="display:none;">
+                            <span class="badge bg-primary mb-2">Admin</span>
+                            <p class="small mb-0">Can issue items from inventory and manage materials. No user management access.</p>
+                        </div>
+                        <div id="role-desc-hod" class="role-desc" style="display:none;">
+                            <span class="badge bg-warning text-dark mb-2">Head of Department</span>
+                            <p class="small mb-0">Can approve/reject requisitions from their department members.</p>
+                        </div>
+                        <div id="role-desc-initiator" class="role-desc" style="display:none;">
+                            <span class="badge bg-secondary mb-2">Initiator</span>
+                            <p class="small mb-0">Can create requisitions for approval. Standard employee access.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Department</h5>
+                </div>
+                <div class="card-body">
+                    <label for="{{ form.department.id_for_label }}" class="form-label fw-semibold">
+                        Select Department
+                    </label>
+                    {{ form.department }}
+                    {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
+                    <div class="form-text">Required for HOD and Initiator roles.</div>
+                    
+                    <!-- HOD Selection for Initiators -->
+                    <div id="supervising_hod_field" style="display: none;" class="mt-3 pt-3 border-top">
+                        <label for="{{ form.supervising_hod.id_for_label }}" class="form-label fw-semibold">
+                            <i class="bi bi-person-check me-1"></i>Supervising HOD <span class="text-danger">*</span>
+                        </label>
+                        {{ form.supervising_hod }}
+                        {% if form.supervising_hod.errors %}<div class="text-danger small mt-1">{{ form.supervising_hod.errors }}</div>{% endif %}
+                        <div class="form-text">HOD who approves this initiator's requisitions.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg me-2"></i>
+                    {% if object %}Update User{% else %}Create User{% endif %}
+                </button>
+                <a href="{% url 'core:user_management' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-2"></i>Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('id_role');
+    const deptSelect = document.getElementById('id_department');
+    const hodField = document.getElementById('supervising_hod_field');
+    
+    function updateFormVisibility() {
+        const role = roleSelect ? roleSelect.value : 'initiator';
+        
+        // Show/hide HOD selection field
+        if (hodField) {
+            hodField.style.display = (role === 'initiator') ? 'block' : 'none';
+        }
+        
+        // Show/hide role descriptions
+        document.querySelectorAll('.role-desc').forEach(el => el.style.display = 'none');
+        const roleDesc = document.getElementById('role-desc-' + role);
+        if (roleDesc) roleDesc.style.display = 'block';
+        
+        // Update department required attribute
+        if (deptSelect) {
+            if (role === 'initiator' || role === 'hod') {
+                deptSelect.setAttribute('required', 'required');
+            } else {
+                deptSelect.removeAttribute('required');
+            }
+        }
+    }
+    
+    if (roleSelect) {
+        roleSelect.addEventListener('change', updateFormVisibility);
+        updateFormVisibility();
+    }
+});
+</script>
+{% endblock %}

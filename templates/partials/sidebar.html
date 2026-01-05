@@ -1,0 +1,175 @@
+<!-- Sidebar Navigation -->
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+    <div class="position-sticky pt-3">
+        <div class="text-center mb-4">
+            <h5 class="text-white">HPL Inventory</h5>
+            <small class="text-muted">Management System</small>
+        </div>
+        
+        <ul class="nav flex-column">
+            <!-- Common Links for all users -->
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'core:dashboard' %}active{% endif %}" 
+                   href="{% url 'core:dashboard' %}">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Dashboard
+                </a>
+            </li>
+            
+            <!-- Requisition Links -->
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'requisition:list' %}active{% endif %}" 
+                   href="{% url 'requisition:list' %}">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    All Requisitions
+                </a>
+            </li>
+            
+            {% if user.is_initiator %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'requisition:create' %}active{% endif %}" 
+                   href="{% url 'requisition:create' %}">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    New Requisition
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'requisition:initiator_dashboard' %}active{% endif %}" 
+                   href="{% url 'requisition:initiator_dashboard' %}">
+                    <i class="bi bi-person-badge me-2"></i>
+                    My Requests
+                </a>
+            </li>
+            {% endif %}
+            
+            {% if user.is_hod %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'requisition:hod_dashboard' %}active{% endif %}" 
+                   href="{% url 'requisition:hod_dashboard' %}">
+                    <i class="bi bi-check-square me-2"></i>
+                    Approvals
+                    {% with pending_count=user.get_pending_requisitions_count %}
+                    {% if pending_count > 0 %}
+                    <span class="badge bg-warning text-dark ms-2">{{ pending_count }}</span>
+                    {% endif %}
+                    {% endwith %}
+                </a>
+            </li>
+            {% endif %}
+            
+            {% if user.is_admin or user.is_super_admin %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.view_name == 'requisition:admin_dashboard' %}active{% endif %}" 
+                   href="{% url 'requisition:admin_dashboard' %}">
+                    <i class="bi bi-box-seam me-2"></i>
+                    Issue Items
+                    {% with pending_count=user.get_pending_requisitions_count %}
+                    {% if pending_count > 0 %}
+                    <span class="badge bg-warning text-dark ms-2">{{ pending_count }}</span>
+                    {% endif %}
+                    {% endwith %}
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Inventory Section - Visible to all -->
+            <li class="nav-item mt-3">
+                <small class="text-muted px-3 text-uppercase">Inventory</small>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory' in request.path and 'transaction' not in request.path and 'location' not in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:list' %}">
+                    <i class="bi bi-boxes me-2"></i>
+                    Items
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory/transaction' in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:transaction_list' %}">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Transactions
+                </a>
+            </li>
+            
+            {% if user.is_admin or user.is_super_admin %}
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory/location' in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:location_list' %}">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Locations
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Super Admin Section -->
+            {% if user.is_super_admin %}
+            <li class="nav-item mt-3">
+                <small class="text-muted px-3 text-uppercase">Administration</small>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'super-admin' in request.path and 'materials' not in request.path and 'user' not in request.path and 'department' not in request.path %}active{% endif %}" 
+                   href="{% url 'core:super_admin_dashboard' %}">
+                    <i class="bi bi-grid-3x3 me-2"></i>
+                    Overview
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'super-admin' in request.path and 'user' in request.path %}active{% endif %}" 
+                   href="{% url 'core:user_management' %}">
+                    <i class="bi bi-people me-2"></i>
+                    User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'super-admin' in request.path and 'materials' in request.path %}active{% endif %}" 
+                   href="{% url 'core:materials_management' %}">
+                    <i class="bi bi-boxes me-2"></i>
+                    Materials
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory/create' in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:create' %}">
+                    <i class="bi bi-plus-square me-2"></i>
+                    Add Item
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'super-admin' in request.path and 'department' in request.path %}active{% endif %}" 
+                   href="{% url 'core:department_management' %}">
+                    <i class="bi bi-building me-2"></i>
+                    Departments
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Regular Admin Section (non-super admin) -->
+            {% if user.is_admin and not user.is_super_admin %}
+            <li class="nav-item mt-3">
+                <small class="text-muted px-3">Administration</small>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'materials' in request.path %}active{% endif %}" 
+                   href="{% url 'core:materials_management' %}">
+                    <i class="bi bi-boxes me-2"></i>
+                    Materials
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory/create' in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:create' %}">
+                    <i class="bi bi-plus-square me-2"></i>
+                    Add Item
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'inventory/location' in request.path %}active{% endif %}" 
+                   href="{% url 'inventory:location_list' %}">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Locations
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
