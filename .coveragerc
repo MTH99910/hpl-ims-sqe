@@ -1,0 +1,16 @@
+# In-scope server-side business logic (see docs/11_unit_testing.md for the justification of every omission).
+[run]
+branch = True
+source = requisition, inventory, core
+omit =
+    */migrations/*
+    */admin.py
+    */apps.py
+    */urls.py
+    */__init__.py
+    core/forms.py
+    inventory/forms.py
+    core/management/*
+[report]
+show_missing = True
+skip_covered = False

@@ -1,0 +1,17 @@
+{
+  "_doc": "Every uncovered in-scope line/branch must be listed here WITH a justification. See docs/11_unit_testing.md section 'Uncovered code'.",
+  "lines": [
+    {"file": "requisition/views.py", "from": 348, "to": 348,
+     "why": "RequisitionUpdateView.get_success_url - only reached after a successful UI update POST, which is impossible on the baseline because of defect F14 (form_valid crashes on line 410). Becomes coverable when F14 is fixed."},
+    {"file": "requisition/views.py", "from": 411, "to": 459,
+     "why": "Remainder of RequisitionUpdateView.form_valid after line 410, which always raises AttributeError (F14: cleaned_data read from an UNBOUND formset). Unreachable until F14 is fixed; behaviour is exercised via the JSON update API instead (UT107-UT114)."}
+  ],
+  "branches": [
+    {"file": "requisition/views.py", "branch": "299->298",
+     "why": "Infeasible: `if errors:` in RequisitionCreateView - formset.errors only contains ErrorDicts whose fields have >=1 error, so the False edge cannot occur."},
+    {"file": "requisition/views.py", "branch": "324->323",
+     "why": "Infeasible: `if item_data.get('item')` - 'item' is a required ModelChoiceField, so every valid, non-deleted line has an item."},
+    {"file": "requisition/views.py", "branch": "578->577",
+     "why": "Infeasible: same `if errors:` pattern in IssueItemsView.post - form.errors never maps a field to an empty list."}
+  ]
+}
