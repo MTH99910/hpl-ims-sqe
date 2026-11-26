@@ -28,12 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Forbid bypass constructs in workflows
-        run: |
-          if grep -RnE 'continue-on-error|\|\|[[:space:]]*true|set[[:space:]]+\+e' .github/workflows/ \
-               | grep -v '^.github/workflows/ci.yml:[0-9]*:#'; then
-            echo "::error::escape hatch found in a workflow file"; exit 1
-          fi
-          echo "no escape hatches"
+        run: scripts/team/lint_ci.sh
 
   unit:
     name: unit + coverage gate
