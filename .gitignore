@@ -15,3 +15,6 @@ tests/team/e2e/node_modules/
 reports/tmp/
 .sonar_token
 tests/team/mutation/sqe_operators/*.egg-info/
+tests/team/data/e2e.sqlite3
+tests/team/data/perf.sqlite3
+tests/team/e2e/test-results/

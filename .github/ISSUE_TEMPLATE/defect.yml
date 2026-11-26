@@ -1,0 +1,32 @@
+name: Defect
+description: A deviation between the test basis (docs/01_test_basis.md) and the observed behaviour
+labels: ["status:new"]
+body:
+  - type: input
+    id: defect_id
+    attributes: {label: "Defect id (F-number)", placeholder: "F13"}
+    validations: {required: true}
+  - type: textarea
+    id: steps
+    attributes: {label: Steps to reproduce (synthetic data, seeded by scripts/team/seed_team.py)}
+    validations: {required: true}
+  - type: textarea
+    id: expected
+    attributes: {label: Expected (cite FR / BR / assumption)}
+    validations: {required: true}
+  - type: textarea
+    id: actual
+    attributes: {label: Actual}
+    validations: {required: true}
+  - type: input
+    id: test
+    attributes: {label: Test that reveals it (file::name)}
+  - type: input
+    id: risk
+    attributes: {label: Linked risk (risk register id)}
+  - type: textarea
+    id: evidence
+    attributes: {label: Evidence (CI run, Playwright trace, screenshot, log)}
+  - type: input
+    id: env
+    attributes: {label: Environment, value: "upstream 549113c, Python 3.12.16, Django 4.2.30, SQLite"}

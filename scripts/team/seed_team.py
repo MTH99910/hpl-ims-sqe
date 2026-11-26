@@ -85,6 +85,9 @@ def seed():
              hod_approver=hod_it, hod_action_date=now)
     make_req(u_it, "authorized", [(st002, 1)], purpose="Printer paper for IT reports",
              hod_approver=hod_it, hod_action_date=now)
+    # Requested more than the current stock (stock fell after approval) - BR-1 stock limit in the UI.
+    make_req(u_it, "authorized", [(st002, 3)], purpose="Paper bulk order for training",
+             hod_approver=hod_it, hod_action_date=now)
     make_req(u_it, "sent_back", [(st001, 1)], purpose="Single pen request for review",
              hod_approver=hod_it, hod_action_date=now, sent_back_reason="Add cost centre", sent_back_at=now)
     make_req(u_it, "rejected", [(hk002, 2)], purpose="Gloves for an unapproved event",

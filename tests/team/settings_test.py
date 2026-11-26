@@ -10,5 +10,7 @@ DATABASES = {
     }
 }
 # Faster password hashing for tests only (does not change app behaviour under test).
+# MD5 first = new hashes are cheap; the default hashers stay so seeded PBKDF2 hashes still verify.
 if os.environ.get("FAST_HASH"):
-    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    from django.conf import global_settings
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher", *global_settings.PASSWORD_HASHERS]

@@ -1,7 +1,11 @@
 # In-scope server-side business logic (see docs/11_unit_testing.md for the justification of every omission).
 [run]
 branch = True
-source = requisition, inventory, core
+relative_files = True
+include =
+    requisition/*
+    inventory/*
+    core/*
 omit =
     */migrations/*
     */admin.py
