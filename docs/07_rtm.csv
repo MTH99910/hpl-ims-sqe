@@ -1,0 +1,20 @@
+req_id,requirement,risk,techniques,unit_tests,api_tests,e2e_tests,defects
+FR-01,HOD dashboard lists own-department pending requisitions only,PR-3,EP / DT-1,test_UT81;test_UT82,test_API_DT1_approval_authority,UC-01 E1,
+FR-02,Approval screen only for in-scope requisitions,PR-3,MCC / DT-1 / ST,test_UT50;test_UT51;test_UT52,test_API_DT1_approval_authority;test_API_DT1_R7,UC-01 A2;SEC-01;SEC-02;SEC-05,F4 #3
+FR-03,Authorize sets status + approver + time + message,PR-3,UC / ST,test_UT53,test_API_ST_valid_transition[pending_hod--approve-->authorized];test_API_hod_decision_generated,UC-01 main;UC-01 A1;UX-01,
+FR-04,Reject requires a reason,PR-3,DT-2 / EP / BVA,test_UT43;test_UT55;test_UT56,test_API_ST_valid_transition[pending_hod--reject-->rejected];test_API_hod_decision_generated,UC-02 A1;UC-02 E2,F20 #13
+FR-05,Send back requires comments,PR-3,DT-2 / EP / BVA,test_UT43;test_UT54;test_UT56,test_API_ST_valid_transition[pending_hod--send_back-->sent_back];test_API_hod_decision_generated,UC-02 main;UC-02 A2;UC-02 E1,
+FR-06,Notifications on decision (initiator + all admins),PR-10,read-back,test_UT53;test_UT54;test_UT55;test_UT57,test_API_REP_repeat_approval_no_duplicate_notifications;test_API_M6,UC-01 main,
+FR-07,Admin dashboard lists authorized requisitions,PR-1,EP,test_UT83,test_API_X1,UC-03 main,
+FR-08,Issue form pre-fills quantity with requested,PR-2,UC,test_UT36;test_UT37;test_UT38;test_UT60,test_API_M7,UC-03 main,F13 #1
+FR-09,Partial issue 0..requested,PR-2,BVA / UC,test_UT30;test_UT31;test_UT64,test_API_issue_generated,UC-04 main;UC-04 A1,
+FR-10,Issue reduces stock and records one outward transaction per issued line,PR-2,BVA / read-back / recovery,test_UT62;test_UT63;test_UT64,test_API_X1;test_API_X4;test_API_issue_generated,UC-03 A2;UC-04 main;UC-04 A1;UC-04 A2,F13 #1;F7 #4
+FR-11,After issue: status issued + issuer + time + notification,PR-2,read-back,test_UT62,test_API_X1;test_API_ST_valid_transition[authorized--issue-->issued],UC-03 A2;UX-02,
+FR-12,Over-issue refused with corrective message and nothing saved,PR-2,BVA / DT-3,test_UT31;test_UT32;test_UT33;test_UT34;test_UT65,test_API_X5;test_API_issue_generated,UC-03 E1;UC-04 E1;UC-04 E2;UX-02,F18 #10
+FR-13,Non-authorized requisition cannot be issued; no duplicates on repeat,PR-4,ST / repeated requests,test_UT61;test_UT67,test_API_REP_repeat_issue_no_duplicate;test_API_ST_invalid_transition_refused;test_API_X2,UC-03 E2,
+FR-14,Initiator creates requisition (purpose>=10; >=1 item; qty>=1),PR-6,EP / BVA / DT-6,test_UT88;test_UT89;test_UT90;test_UT101;test_UT103,test_API_create_generated;test_API_REP_double_create,,F6 #5;F16 #8;F17 #9
+FR-15,Initiator revises sent-back requisition -> pending_hod,PR-4,ST / EP / BVA,test_UT94;test_UT108;test_UT109;test_UT111;test_UT112,test_API_update_generated;test_API_X3;test_API_ST_valid_transition[sent_back--resubmit-->pending_hod],,F14 #6;F15 #7
+BR-1,0 <= issued <= min(requested; stock),PR-2,3-point BVA / DT-3 / CFG basis paths,test_UT30;test_UT31;test_UT32;test_UT33;test_UT34;test_UT39;test_UT40,test_API_issue_generated;test_API_create_generated,UC-03 E1;UC-04 E1;UC-04 E2;UX-02,
+BR-2,HOD authority (4 conditions) + reason rule,PR-3,MCC / MC-DC / DT-1 / DT-2,test_UT09;test_UT43;test_UT130;test_UT141;test_UT142;test_UT143,test_API_DT1_approval_authority;test_API_hod_decision_generated,UC-01 E1;SEC-01;SEC-02,F4 #3
+BR-3,Requisition lifecycle state machine,PR-4,state transition,test_UT08;test_UT140;test_UT52;test_UT61;test_UT98,test_API_ST_valid_transition;test_API_ST_invalid_transition_refused,UC-01 E2;UC-03 E2,F4 #3;F19 #12
+BR-4,Issue all-or-nothing; exact stock deduction; never negative,PR-2;PR-5,recovery / mutation / read-back,test_UT62;test_UT64;test_UT68;test_REC01;test_REC02,test_API_X1;test_API_X5,UC-04 A1;UC-04 A2,F13 #1;F7 #4;F6 #5

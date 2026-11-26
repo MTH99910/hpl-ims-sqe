@@ -1,0 +1,98 @@
+[
+  {
+    "id": "SEC-01",
+    "role": "hod_it",
+    "action": "Open approval screen of own-department pending requisition",
+    "expected": "allow",
+    "observed": "allow",
+    "http_status": 200,
+    "final_url": "/requisition/1/hod-approval/",
+    "evidence": "reports/security/SEC-01.png",
+    "defect": null,
+    "verdict": "PASS"
+  },
+  {
+    "id": "SEC-02",
+    "role": "hod_it",
+    "action": "Open approval screen of another department's requisition",
+    "expected": "deny",
+    "observed": "deny",
+    "http_status": 404,
+    "final_url": "/requisition/3/hod-approval/",
+    "evidence": "reports/security/SEC-02.png",
+    "defect": null,
+    "verdict": "PASS"
+  },
+  {
+    "id": "SEC-03",
+    "role": "hod_it",
+    "action": "Open the Issue Items screen of an authorized requisition",
+    "expected": "deny",
+    "observed": "allow",
+    "http_status": 200,
+    "final_url": "/requisition/4/issue/",
+    "evidence": "reports/security/SEC-03.png",
+    "defect": "F3",
+    "verdict": "FAIL"
+  },
+  {
+    "id": "SEC-04",
+    "role": "admin",
+    "action": "Open the Issue Items screen of an authorized requisition",
+    "expected": "allow",
+    "observed": "allow",
+    "http_status": 200,
+    "final_url": "/requisition/4/issue/",
+    "evidence": "reports/security/SEC-04.png",
+    "defect": null,
+    "verdict": "PASS"
+  },
+  {
+    "id": "SEC-05",
+    "role": "admin",
+    "action": "Open the HOD approval screen of a pending requisition",
+    "expected": "deny",
+    "observed": "allow",
+    "http_status": 200,
+    "final_url": "/requisition/1/hod-approval/",
+    "evidence": "reports/security/SEC-05.png",
+    "defect": "F4",
+    "verdict": "FAIL"
+  },
+  {
+    "id": "SEC-06",
+    "role": "user_it_1",
+    "action": "Open the Issue Items screen (initiator)",
+    "expected": "deny",
+    "observed": "allow",
+    "http_status": 200,
+    "final_url": "/requisition/4/issue/",
+    "evidence": "reports/security/SEC-06.png",
+    "defect": "F3",
+    "verdict": "FAIL"
+  },
+  {
+    "id": "SEC-07",
+    "role": "anonymous",
+    "action": "Open the Issue Items screen without logging in",
+    "expected": "deny",
+    "observed": "deny",
+    "http_status": 200,
+    "final_url": "/login/?next=/requisition/4/issue/",
+    "evidence": "reports/security/SEC-07.png",
+    "defect": null,
+    "verdict": "PASS"
+  },
+  {
+    "id": "SEC-08",
+    "role": "hod_it",
+    "action": "Submit an issue of 3 units",
+    "expected": "deny",
+    "observed": "allow",
+    "http_status": null,
+    "final_url": "/requisition/admin/",
+    "evidence": "DB: status=issued, issuer=hod_it, stock=7",
+    "defect": "F3",
+    "verdict": "FAIL"
+  }
+]

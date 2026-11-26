@@ -1,0 +1,5 @@
+GET /login/ Set-Cookie: csrftoken=3e4BXZrSWq78YffdI6UNYes4xbLXJDEJ; expires=Thu, 25 Nov 2027 13:53:11 GMT; Max-Age=31449600; Path=/; SameSite=Lax
+POST /login/ status 302
+POST /login/ Set-Cookie: messages=W1siX19qc29uX21lc3NhZ2UiLDAsMjUsIldlbGNvbWUgYmFjaywgSGFtaWQgSVQtSGVhZCEiLCIiXV0:1xWZuR:2a7_4I1E6VxJXsw1NbYgbTawN_mgWayS9ohZ82JcXs0; HttpOnly; Path=/; SameSite=Lax, csrftoken=12Jdsj9sGQFjXszWAtlWVNc7SlpYIRX3; expires=Thu, 25 Nov 2027 13:53:11 GMT; Max-Age=31449600; Path=/; SameSite=Lax, sessionid=jluzywtkfs48qifu1bse2eu7sqc13ptd; expires=Thu, 10 Dec 2026 13:53:11 GMT; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax
+Response headers: {'Server': 'WSGIServer/0.2 CPython/3.12.16', 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin'}
+404 page shows DEBUG info: True | status 404
