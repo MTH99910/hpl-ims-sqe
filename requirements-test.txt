@@ -10,3 +10,4 @@ cosmic-ray==8.4.1
 pip-audit==2.9.0
 matplotlib==3.10.1
 gunicorn==23.0.0
+markdown==3.8
