@@ -1,0 +1,13 @@
+# Mutation testing of the business-rule module (BR-1..BR-4).
+#   cosmic-ray init  tests/team/mutation/cosmic-ray.toml reports/tmp/mutation.sqlite
+#   python tests/team/mutation/filter_scope.py reports/tmp/mutation.sqlite
+#   cosmic-ray exec  tests/team/mutation/cosmic-ray.toml reports/tmp/mutation.sqlite
+#   python tests/team/mutation/score.py reports/tmp/mutation.sqlite --min 80
+[cosmic-ray]
+module-path = ["requisition/forms.py", "requisition/models.py", "requisition/views.py"]
+timeout = 60.0
+excluded-modules = []
+test-command = ".venv/bin/python -m pytest -x -q -p no:cacheprovider --no-header -o addopts= tests/team/unit/test_forms.py tests/team/unit/test_models.py tests/team/unit/test_views_workflows.py tests/team/unit/test_mixins_and_misc.py tests/team/unit/test_mutation_killers.py"
+
+[cosmic-ray.distributor]
+name = "local"

@@ -1,0 +1,153 @@
+# Quality gate for every pull request (and every push to main).
+# Every job is a REQUIRED status check in the branch protection of `main`, so a failure in any
+# job blocks the merge; `deploy` needs all of them, so a failure also blocks deployment.
+# No escape hatches: no continue-on-error, no `|| true`, no `set +e` - enforced by the lint-ci job.
+name: CI quality gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  DJANGO_SETTINGS_MODULE: tests.team.settings_test
+  FAST_HASH: "1"
+  COVERAGE_MIN: "100"      # % of feasible in-scope statements+branches (scripts/team/coverage_gate.py)
+  MUTATION_MIN: "95"       # % killed of non-equivalent mutants (justified in docs/14_ci_gate.md)
+  API_COVERAGE_MIN: "100"  # % of reachable API coverage criteria
+
+jobs:
+  lint-ci:
+    name: lint-ci (no escape hatches)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Forbid bypass constructs in workflows
+        run: |
+          if grep -RnE 'continue-on-error|\|\|[[:space:]]*true|set[[:space:]]+\+e' .github/workflows/ \
+               | grep -v '^.github/workflows/ci.yml:[0-9]*:#'; then
+            echo "::error::escape hatch found in a workflow file"; exit 1
+          fi
+          echo "no escape hatches"
+
+  unit:
+    name: unit + coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: pip install -r requirements-lock.txt && pip install -e tests/team/mutation/sqe_operators
+      - name: Unit tests (white-box)
+        run: >
+          pytest tests/team/unit tests/team/mutation/test_operators.py
+          --cov --cov-report=xml:coverage.xml --cov-report=json:reports/tmp/coverage.json
+          --cov-report=html:reports/coverage --junitxml=reports/tmp/junit-unit.xml
+      - name: Coverage gate
+        run: python scripts/team/coverage_gate.py reports/tmp/coverage.json
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with: { name: unit-coverage, path: "coverage.xml\nreports/coverage\nreports/tmp/junit-unit.xml" }
+
+  api:
+    name: api + integration + data generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: pip install -r requirements-lock.txt
+      - name: Validate OpenAPI spec
+        run: python -c "import yaml; from openapi_spec_validator import validate; validate(yaml.safe_load(open('tests/team/datagen/openapi.yaml')))"
+      - name: Generated test data is up to date with the spec
+        run: python tests/team/datagen/generator.py --check
+      - name: API and integration tests (generator-driven, live server)
+        run: pytest tests/team/api tests/team/integration tests/team/datagen --junitxml=reports/tmp/junit-api.xml
+      - name: API coverage criteria
+        run: python tests/team/api/coverage_report.py --min "$API_COVERAGE_MIN"
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with: { name: api-reports, path: "reports/api_coverage.md\nreports/tmp/junit-api.xml" }
+
+  e2e:
+    name: e2e (Playwright + axe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements-lock.txt
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: tests/team/e2e
+      - name: Use cases, usability, access matrix, axe scans
+        run: npx playwright test
+        working-directory: tests/team/e2e
+        env: { CI: "1" }
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with: { name: playwright-report, path: "reports/playwright\nreports/security\nreports/a11y" }
+
+  mutation:
+    name: mutation (Cosmic Ray, business-rule module)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements-lock.txt
+          .venv/bin/pip install -e tests/team/mutation/sqe_operators
+      - name: Baseline (unmutated suite must pass - guards against 'everything killed' by a broken command)
+        run: .venv/bin/cosmic-ray baseline tests/team/mutation/cosmic-ray.toml
+      - name: Run mutants in the business-rule scope
+        run: |
+          mkdir -p reports/tmp
+          .venv/bin/cosmic-ray init tests/team/mutation/cosmic-ray.toml reports/tmp/mutation.sqlite
+          .venv/bin/python tests/team/mutation/filter_scope.py reports/tmp/mutation.sqlite
+          .venv/bin/cosmic-ray exec tests/team/mutation/cosmic-ray.toml reports/tmp/mutation.sqlite
+      - name: Mutation score gate
+        run: .venv/bin/python tests/team/mutation/score.py reports/tmp/mutation.sqlite --min "$MUTATION_MIN"
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with: { name: mutation-session, path: reports/tmp/mutation.sqlite }
+
+  sonarqube:
+    name: sonarqube quality gate
+    runs-on: ubuntu-latest
+    services:
+      sonarqube:
+        image: sonarqube:community
+        ports: ["9000:9000"]
+        env: { SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true" }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ env.PYTHON_VERSION }}" }
+      - run: pip install -r requirements-lock.txt pysonar
+      - name: Tests for coverage import
+        run: pytest tests/team/unit --cov --cov-report=xml:coverage.xml --junitxml=reports/tmp/junit-unit.xml
+      - name: Configure SonarQube (password, token, custom overall-code quality gate)
+        run: scripts/team/sonar_gate.sh
+      - name: Analyse and wait for the quality gate
+        run: pysonar --sonar-host-url=http://localhost:9000 --sonar-token="$(cat .sonar_token)" -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=600
+
+  deploy:
+    name: deploy test reports
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint-ci, unit, api, e2e, mutation, sonarqube]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy (only reached when every gate passed)
+        run: echo "All quality gates passed for ${GITHUB_SHA} - release candidate published."

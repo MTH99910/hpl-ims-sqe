@@ -1,0 +1,31 @@
+{
+  "_doc": "Surviving mutants proven equivalent (no test can distinguish them from the original). Analysis: docs/13_mutation.md. Matched by file + line + operator.",
+  "equivalent": [
+    {"id": "S01", "file": "requisition/forms.py", "line": 93, "operator": "sqe/DropConjunct",
+     "why": "`self.instance and self.instance.pk` -> `self.instance.pk`: a ModelForm always has an instance (Django creates an empty one), so the first operand is always truthy."},
+    {"id": "S03", "file": "requisition/forms.py", "line": 111, "operator": "sqe/DropConjunct",
+     "why": "`item and qty > stock` -> `qty > stock`: RequisitionLineItem.item is a non-null FK (on_delete=PROTECT), so `item` is always present for a saved line; the guard is defensive only (also the infeasible MCC row of D2)."},
+    {"id": "S06", "file": "requisition/models.py", "line": 174, "operator": "core/ReplaceComparisonOperator_Eq_GtE",
+     "why": "`status >= 'sent_back'`: among the 7 valid statuses only 'sent_back' sorts at or after 'sent_back' (s is the highest initial letter), so >= selects exactly the same set as ==."},
+    {"id": "S09", "file": "requisition/models.py", "line": 178, "operator": "core/ReplaceComparisonOperator_Eq_LtE",
+     "why": "`status <= 'authorized'`: 'authorized' is the lexicographically smallest valid status, so <= matches only 'authorized'."},
+    {"id": "S15", "file": "requisition/models.py", "line": 185, "operator": "core/ReplaceComparisonOperator_Eq_LtE",
+     "why": "Same as S09 (status <= 'authorized' == status == 'authorized' over the valid status domain)."},
+    {"id": "S18", "file": "requisition/views.py", "line": 494, "operator": "core/ReplaceFalseWithTrue",
+     "why": "form.save(commit=True) instead of commit=False: the object is saved once more before the final save at the end of form_valid; the end state (fields, notifications) is identical."},
+    {"id": "S19", "file": "requisition/views.py", "line": 499, "operator": "core/ReplaceComparisonOperator_Eq_GtE",
+     "why": "Same domain argument as S06 for `status >= 'sent_back'`."},
+    {"id": "S20", "file": "requisition/views.py", "line": 499, "operator": "core/ReplaceComparisonOperator_Eq_Is",
+     "why": "`status is 'sent_back'`: here status was just assigned from the literal in HODActionForm.clean(); CPython interns identifier-like string literals, so identity equals equality on this path."},
+    {"id": "S21", "file": "requisition/views.py", "line": 502, "operator": "core/ReplaceComparisonOperator_Eq_Is",
+     "why": "Same as S20 for 'authorized'."},
+    {"id": "S22", "file": "requisition/views.py", "line": 502, "operator": "core/ReplaceComparisonOperator_Eq_LtE",
+     "why": "Same domain argument as S09; the value can only be authorized/sent_back/rejected here."},
+    {"id": "S23", "file": "requisition/views.py", "line": 510, "operator": "core/ReplaceComparisonOperator_Eq_GtE",
+     "why": "Same domain argument as S06."},
+    {"id": "S24", "file": "requisition/views.py", "line": 510, "operator": "core/ReplaceComparisonOperator_Eq_Is",
+     "why": "Same interning argument as S20."},
+    {"id": "S25", "file": "requisition/views.py", "line": 602, "operator": "core/ReplaceComparisonOperator_Gt_NotEq",
+     "why": "`qty_issued > 0` -> `!= 0`: negative quantities never reach form_valid (rejected by clean_quantity_issued and the formset validation), so the two conditions agree on every reachable value."}
+  ]
+}

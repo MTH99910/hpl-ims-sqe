@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqe-operators"
+version = "1.0.0"
+description = "Custom Cosmic Ray mutation operators derived from the Requisition business rules (BR-2, BR-3, BR-4)"
+requires-python = ">=3.10"
+dependencies = ["cosmic-ray==8.4.1"]
+
+[project.entry-points."cosmic_ray.operator_providers"]
+sqe = "sqe_operators.provider:Provider"
+
+[tool.setuptools]
+packages = ["sqe_operators"]

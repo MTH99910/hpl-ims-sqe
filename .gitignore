@@ -13,3 +13,5 @@ htmlcov/
 .scannerwork/
 tests/team/e2e/node_modules/
 reports/tmp/
+.sonar_token
+tests/team/mutation/sqe_operators/*.egg-info/
