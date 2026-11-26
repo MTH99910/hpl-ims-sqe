@@ -1,0 +1,54 @@
+
+
+  █ THRESHOLDS 
+
+    approval_requests{phase:measured}
+    ✓ 'count>0' count=70
+
+    approval_screen_ms{phase:measured}
+    ✓ 'p(95)<=300' p(95)=763.64µs
+
+    unexpected_failures{phase:measured}
+    ✗ 'rate<0.01' rate=98.57%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......................: 172    2.017959/s
+    checks_succeeded...................: 3.48%  6 out of 172
+    checks_failed......................: 96.51% 166 out of 172
+
+    ✓ login redirected
+    ✗ status 200
+      ↳  2% — ✓ 2 / ✗ 83
+    ✗ decision form rendered
+      ↳  2% — ✓ 2 / ✗ 83
+
+    CUSTOM
+    approval_requests.......................................................: 85     0.997247/s
+      { phase:measured }....................................................: 70     0.821262/s
+    approval_screen_ms......................................................: avg=1.04ms  min=548.19µs med=649.69µs p(90)=757.4µs  p(95)=787.72µs max=18.55ms 
+      { phase:measured }....................................................: avg=722.3µs min=568.84µs med=645.3µs  p(90)=739.44µs p(95)=763.64µs max=4.82ms  
+    unexpected_failures.....................................................: 97.64% 83 out of 85
+      { phase:measured }....................................................: 98.57% 69 out of 70
+
+    HTTP
+    http_req_duration.......................................................: avg=3.7ms   min=548.19µs med=652.31µs p(90)=779.86µs p(95)=5.16ms   max=120.08ms
+      { expected_response:true }............................................: avg=3.7ms   min=548.19µs med=652.31µs p(90)=779.86µs p(95)=5.16ms   max=120.08ms
+    http_req_failed.........................................................: 0.00%  0 out of 89
+    http_reqs...............................................................: 89     1.044176/s
+
+    EXECUTION
+    iteration_duration......................................................: avg=1s      min=1s       med=1s       p(90)=1s       p(95)=1s       max=1.13s   
+    iterations..............................................................: 85     0.997247/s
+    vus.....................................................................: 1      min=1        max=1
+    vus_max.................................................................: 2      min=2        max=2
+
+    NETWORK
+    data_received...........................................................: 95 kB  1.1 kB/s
+    data_sent...............................................................: 9.5 kB 112 B/s
+
+
+
+time="2026-11-26T18:37:10+05:00" level=error msg="thresholds on metrics 'unexpected_failures{phase:measured}' have been crossed"
+k6 exit code: 99

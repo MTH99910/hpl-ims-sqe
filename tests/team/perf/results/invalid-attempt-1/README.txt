@@ -1,0 +1,1 @@
+First attempt (2026-11-26 ~18:35): INVALID - k6 resets cookies between iterations by default, so only the first request of each VU carried the session (98.6% 'failures' were redirects to /login/). Fixed with options.noCookiesReset = true. Kept for transparency; not used in the analysis.

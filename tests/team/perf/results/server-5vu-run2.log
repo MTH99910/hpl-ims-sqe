@@ -1,0 +1,9 @@
+[2026-11-26 18:43:32 +0500] [38310] [INFO] Starting gunicorn 23.0.0
+[2026-11-26 18:43:32 +0500] [38310] [INFO] Listening at: http://127.0.0.1:8020 (38310)
+[2026-11-26 18:43:32 +0500] [38310] [INFO] Using worker: sync
+[2026-11-26 18:43:32 +0500] [38315] [INFO] Booting worker with pid: 38315
+[2026-11-26 18:43:32 +0500] [38316] [INFO] Booting worker with pid: 38316
+[2026-11-26 18:44:59 +0500] [38310] [INFO] Handling signal: term
+[2026-11-26 19:14:59 +0530] [38315] [INFO] Worker exiting (pid: 38315)
+[2026-11-26 19:14:59 +0530] [38316] [INFO] Worker exiting (pid: 38316)
+[2026-11-26 18:44:59 +0500] [38310] [INFO] Shutting down: Master

@@ -1,0 +1,9 @@
+[2026-11-26 18:40:36 +0500] [38080] [INFO] Starting gunicorn 23.0.0
+[2026-11-26 18:40:36 +0500] [38080] [INFO] Listening at: http://127.0.0.1:8020 (38080)
+[2026-11-26 18:40:36 +0500] [38080] [INFO] Using worker: sync
+[2026-11-26 18:40:36 +0500] [38085] [INFO] Booting worker with pid: 38085
+[2026-11-26 18:40:36 +0500] [38086] [INFO] Booting worker with pid: 38086
+[2026-11-26 18:42:05 +0500] [38080] [INFO] Handling signal: term
+[2026-11-26 19:12:05 +0530] [38085] [INFO] Worker exiting (pid: 38085)
+[2026-11-26 19:12:05 +0530] [38086] [INFO] Worker exiting (pid: 38086)
+[2026-11-26 18:42:05 +0500] [38080] [INFO] Shutting down: Master

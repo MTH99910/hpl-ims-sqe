@@ -33,6 +33,7 @@ export const options = {
     'approval_requests{phase:measured}': ['count>0'],
   },
   summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'max'],
+  noCookiesReset: true,            // keep each VU's session cookie across iterations (k6 resets it by default)
 };
 
 function login() {
