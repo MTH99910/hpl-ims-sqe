@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+test-results/
+playwright-report/
+reports/tmp/
+tests/team/data/team.sqlite3
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.scannerwork/
