@@ -23,6 +23,8 @@ def load(paths):
             skipped = tc.find("skipped")
             failed = tc.find("failure") is not None or tc.find("error") is not None
             xfail = skipped is not None and "xfail" in (skipped.get("type", "") + skipped.get("message", "")).lower()
+            # Playwright test.fail(): reported without <failure> but with a property named "fail"
+            xfail = xfail or any(pr.get("name") == "fail" for pr in tc.iter("property"))
             results[name] = "fail" if failed else ("xfail" if xfail or skipped is not None else "pass")
     return results
 

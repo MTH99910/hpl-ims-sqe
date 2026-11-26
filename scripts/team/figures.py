@@ -44,14 +44,14 @@ def risk_matrix():
 
 
 def fishbone(name, effect, causes):
-    fig, ax = plt.subplots(figsize=(12, 5.5))
+    fig, ax = plt.subplots(figsize=(16, 6))
     ax.axis("off")
-    ax.annotate("", xy=(10.2, 0), xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", lw=2.5))
-    ax.text(10.3, 0, effect, va="center", fontsize=10, weight="bold", wrap=True,
+    ax.annotate("", xy=(14.4, 0), xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", lw=2.5))
+    ax.text(14.5, 0, effect, va="center", fontsize=10, weight="bold", wrap=True,
             bbox=dict(boxstyle="round", fc="#fff3e0", ec="#e65100"))
     cats = list(causes)
     for k, cat in enumerate(cats):
-        x = 1.5 + (k // 2) * 3.0
+        x = 2.5 + (k // 2) * 4.6
         up = k % 2 == 0
         y = 2.2 if up else -2.2
         ax.plot([x, x + 1.2], [y, 0], color="#37474f", lw=1.5)
@@ -61,7 +61,7 @@ def fishbone(name, effect, causes):
             xx = x + 1.2 * (1 - yy / y) if y else x
             ax.plot([xx - 1.1, xx], [yy, yy], color="#90a4ae", lw=0.8)
             ax.text(xx - 1.12, yy, c, fontsize=7, ha="right", va="center")
-    ax.set_xlim(-2.5, 13.5), ax.set_ylim(-3, 3)
+    ax.set_xlim(-1.5, 17.5), ax.set_ylim(-3, 3)
     fig.tight_layout()
     fig.savefig(FIG / f"fishbone_{name}.png", dpi=150)
 
