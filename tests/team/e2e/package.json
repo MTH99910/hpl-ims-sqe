@@ -1,0 +1,14 @@
+{
+  "name": "hpl-ims-sqe-e2e",
+  "private": true,
+  "description": "Playwright use-case, usability, accessibility and access-control tests for the Requisition module",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.1",
+    "@playwright/test": "1.52.0",
+    "lighthouse": "12.6.0"
+  }
+}
