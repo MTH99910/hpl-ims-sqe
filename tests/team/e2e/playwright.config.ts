@@ -4,6 +4,7 @@ import path from 'path';
 const ROOT = path.resolve(__dirname, '../../..');
 const E2E_DB = path.join(ROOT, 'tests/team/data/e2e.sqlite3');
 const PORT = Number(process.env.E2E_PORT || 8010);
+const VENV_PY = path.join(ROOT, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 
 export default defineConfig({
   testDir: '.',
@@ -26,7 +27,7 @@ export default defineConfig({
   },
   globalSetup: require.resolve('./helpers/global-setup'),
   webServer: {
-    command: `${ROOT}/.venv/bin/python ${ROOT}/manage.py runserver 127.0.0.1:${PORT} --noreload`,
+    command: `"${VENV_PY}" "${path.join(ROOT, 'manage.py')}" runserver 127.0.0.1:${PORT} --noreload`,
     cwd: ROOT,
     url: `http://127.0.0.1:${PORT}/login/`,
     reuseExistingServer: !process.env.CI,

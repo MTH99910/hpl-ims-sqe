@@ -1,0 +1,6 @@
+# Same line endings on Linux and Windows (shell scripts break with CRLF)
+* text=auto eol=lf
+*.sqlite3 binary
+*.png binary
+*.gz binary
+*.json.gz binary

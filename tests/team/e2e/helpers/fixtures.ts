@@ -3,7 +3,7 @@ import { execFileSync } from 'child_process';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const PY = path.join(ROOT, '.venv/bin/python');
+const PY = path.join(ROOT, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 const DB = path.join(__dirname, 'db_state.py');
 export const PASSWORD = 'Test@12345';
 

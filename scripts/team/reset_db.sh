@@ -8,5 +8,5 @@ DB=${TEAM_DB:-tests/team/data/team.sqlite3}
 rm -f "$DB"
 $PY manage.py migrate -v0
 $PY scripts/team/seed_team.py
-cp "$DB" tests/team/data/golden.sqlite3
+cp "$DB" tests/team/data/golden.sqlite3   # same steps as reset_db.py (cross-platform)
 echo "Reset complete: $DB (golden snapshot refreshed)"
