@@ -11,3 +11,5 @@ coverage.xml
 htmlcov/
 .pytest_cache/
 .scannerwork/
+tests/team/e2e/node_modules/
+reports/tmp/
