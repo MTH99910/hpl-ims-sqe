@@ -47,5 +47,30 @@ Three documented status codes are **blocked by open defects** and listed separat
 Observation (not a defect): CSRF protection is active for every unsafe method, including the JSON APIs (M4: login POST without token → 403).
 
 ## 4. Automated test data generation — regeneration demo (two changed constraints)
-Spec change committed as its own PR (see `docs/14_ci_gate.md`): (1) `purpose.minLength` 10 → **15**, (2) `items[].qty` gets **`maximum: 50`**.
-`python tests/team/datagen/generator.py` → case count and the new BVA rows (`minLength=15: 14/15/16`, `maximum=50: 49/50/51`) appear in `cases.json`/`cases.md`; the CI step `generator.py --check` fails until the generated file is refreshed; the API suite then shows which tests disagree with the unchanged server (purpose length 10–14 and qty 51 are now *expected* invalid but the server still accepts them) — exactly the prediction made before the run (see the PR description).
+Branch `demo/spec-change-regeneration` (PR left open, **not merged** — the server is deliberately unchanged). Two constraints changed in `tests/team/datagen/openapi.yaml`: (1) `RequisitionInput.purpose.minLength` 10 → **15**, (2) `LineInput.qty` gets **`maximum: 50`**.
+
+**Prediction** (written in the PR description before the spec was edited, from `generator.py` and `requisition/views.py`, which rejects `len(purpose.strip()) < 10` and `qty < 1` and has no upper qty limit): 164 → 170 cases; the `purpose` cases keep their count but change value; `qty` gets 3 BVA cases per operation; 6 tests fail — `purpose:EP:02` (whitespace-padded, 14 characters after trimming), `purpose:BVA:05` (14 characters) and `items[0].qty:BVA:09` (51), each for `createRequisition` and `updateRequisition`; the first failing CI step is `generator.py --check` while the data is stale, then the API test step.
+
+**Actual** (27 Nov 2026, local run):
+
+| Step | Command | Result |
+|---|---|---|
+| 1. spec edited, data not refreshed (commit `27ad72e`) | `python tests/team/datagen/generator.py --check` | `generated/cases.json is STALE - run tests/team/datagen/generator.py`, exit 1 |
+| 2. regenerate (commit `936436c`) | `python tests/team/datagen/generator.py` | `wrote 170 cases (BVA 45, EP 125) from spec 93b0cd3c9df4` (before: 164 = BVA 39 + EP 125, spec `6c13ee4e1eff`) |
+| 3. diff | `git diff --stat` | `cases.json` 120 +/− lines, `cases.md` 30, `openapi.yaml` 4 |
+| 4. API suite | `pytest tests/team/api tests/team/integration tests/team/datagen` | **6 failed, 188 passed, 38 xfailed** |
+
+New / changed rows in `generated/cases.md` (same for `updateRequisition`):
+
+| Field | Class | Value | Expected |
+|---|---|---|---|
+| `purpose` | valid:normal | `"Valid text Valid tex"` (20) | valid |
+| `purpose` | invalid:whitespace-padded-too-short | `"  aaaaaaaaaaaaaa  "` (14 after trim) | invalid |
+| `purpose` | minLength=15: −1 / +0 / +1 | 14 / 15 / 16 × `p` | invalid / valid / valid |
+| `items[0].qty` | maximum=50: −1 / +0 / +1 | 49 / 50 / 51 | valid / valid / invalid |
+
+Failed tests — exactly the 6 predicted, each expected 400 and got 200 because the server still applies the old rules:
+`test_API_create_generated[createRequisition:purpose:EP:02]`, `[createRequisition:purpose:BVA:05]`, `[createRequisition:items[0].qty:BVA:09]`, `test_API_update_generated[updateRequisition:purpose:EP:02]`, `[updateRequisition:purpose:BVA:05]`, `[updateRequisition:items[0].qty:BVA:09]`.
+The 4 new cases at 49 and 50 pass, so the pass count stays 188 (= 181 API/integration + 7 generator self-tests before the change, + 4 new − 4 regressions). Predicted vs actual: no difference.
+
+What it shows: the spec is the single oracle — tightening it regenerates the data and the tests without editing any test code, and the pipeline blocks a stale data set (step 1) as well as a server that does not meet the new spec (step 4).
