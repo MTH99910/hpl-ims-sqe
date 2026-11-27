@@ -14,7 +14,7 @@ import pytest
 
 from inventory.models import Transaction
 from requisition.models import Requisition
-from tests.team.api.conftest import apply_value, case_id, cases_for, valid_value
+from tests.team.api.conftest import PASSWORD, apply_value, case_id, cases_for, valid_value
 
 # case-id prefix -> defect id (observed behaviour differs from the spec's expected behaviour)
 # Each entry was confirmed by inspecting the server response / traceback (docs/12_api_findings.md).
@@ -48,6 +48,38 @@ def maybe_xfail(case):
 
 def params(operation):
     return [maybe_xfail(c) for c in cases_for(operation)]
+
+
+# --------------------------------------------------------------------------- login (session auth)
+@pytest.mark.parametrize("case", params("login"))
+def test_API_login_generated(api, users, case):
+    """Base payload = the real seeded account hod_it / Test@12345, one field replaced by the case.
+
+    Decision: for credentials, "valid" means "the real value of an existing account", not just
+    "satisfies minLength". So for a valid case the account is provisioned to make the generated
+    value real (hod_it is renamed to it, or its password is set to it) - the sent value still
+    comes only from the generator, and the BVA boundary (a 1-character credential) is a genuine
+    login. Invalid cases (empty / missing) are sent against the unchanged account.
+    """
+    hod = users["hod_it"]
+    form = {"username": hod.username, "password": PASSWORD}
+    if case["expected"] == "valid":
+        if case["field"] == "username":
+            hod.username = case["value"]
+        else:
+            hod.set_password(case["value"])
+        hod.save()
+    form = apply_value(form, case["field"], case["value"], lambda v: v)
+    client = api()
+    client.get("/login/")                              # CSRF cookie first (anonymous POST -> 403 otherwise)
+    r = client.post("/login/", data=form)
+    dashboard = client.get("/requisition/hod/")                                    # read-back
+    if case["expected"] == "valid":
+        assert r.status_code == 302 and r.headers["Location"] == "/requisition/hod/"
+        assert dashboard.status_code == 200                                       # session works
+    else:
+        assert r.status_code == 200 and "Invalid username or password" in r.text
+        assert dashboard.status_code == 302 and dashboard.headers["Location"].startswith("/login/")
 
 
 # --------------------------------------------------------------------------- createRequisition (FR-14)

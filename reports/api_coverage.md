@@ -1,4 +1,4 @@
-# API coverage criteria (638 recorded calls)
+# API coverage criteria (674 recorded calls)
 
 | Criterion | Covered / reachable | % of reachable | Not covered | Blocked by an open defect (documented in x-observed) |
 |---|---|---|---|---|

@@ -5,20 +5,26 @@
 ## 1. Results
 | Suite | Cases | Passed | Expected-fail (open defect, strict) |
 |---|---|---|---|
-| `test_api_generated.py` — EP + 3-point BVA for every input of 7 operations | 152 | 122 | 30 |
+| `test_api_generated.py` — EP + 3-point BVA for every input of 7 operations (all 164 generated cases) | 164 | 134 | 30 |
 | `test_api_workflows.py` — state transitions, DT-1, DT-4, repeated requests, cross-workflow, method/auth/content type | 52 | 45 | 7 |
 | `tests/team/integration/test_recovery.py` | 3 | 2 | 1 |
 
+Command (27 Nov, before Member A's fix PRs): `pytest tests/team/api tests/team/integration -q` → **181 passed, 38 xfailed**; `python tests/team/api/coverage_report.py` → 674 recorded calls.
+
+**Login cases (decision).** For credentials, "valid" means *the real value of an existing account*, not only "satisfies `minLength`". `test_API_login_generated` therefore sends the seeded account `hod_it` / `Test@12345` with one field replaced by the generated value; for a valid case (`ok`, and the BVA values `p`, `pp`) the account is first provisioned so that the generated value *is* its username or password. The value sent still comes only from the generator, and the lower boundary (a 1-character credential) is a genuine successful login (302 to `/requisition/hod/`, dashboard then 200). Invalid cases (empty, missing) → 200 with "Invalid username or password" and the dashboard still redirects to the login page.
+
+**Harness note.** `requests.Session.get()` follows redirects by default, so a GET that returned 302 was recorded as the 200 of the page it redirected to. `ApiClient.get()` now disables redirects (as `request()` already did for POST), so every GET assertion and the coverage log see the endpoint's own status. Re-running the suite after the change gave the same pass/xfail split for the existing 207 tests.
+
 Techniques applied at API level (each executable case counted once):
 * **EP** — 125 generated class cases (valid classes per enum value; invalid: missing, wrong type, outside enum, empty, whitespace-padded, unknown/inactive/other-requisition references); one invalid value per case.
-* **3-point BVA** — 39 generated boundary cases: `qty` min 1 (0/1/2), `purpose` minLength 10 (9/10/11), `items` minItems 1 (0/1/2), `quantity_issued` min 0 (−1/0/1), `quantity_issued` ≤ requested (req−1/req/req+1), `quantity_issued` ≤ stock (stock−1/stock/stock+1), reasons minLength 1 (0/1/2).
+* **3-point BVA** — 39 generated boundary cases: `qty` min 1 (0/1/2), `purpose` minLength 10 (9/10/11), `items` minItems 1 (0/1/2), `quantity_issued` min 0 (−1/0/1), `quantity_issued` ≤ requested (req−1/req/req+1), `quantity_issued` ≤ stock (stock−1/stock/stock+1), reasons minLength 1 (0/1/2), login `username`/`password` minLength 1 (0/1/2).
 * **Decision tables** — DT-1 approval authority (7 rules incl. Admin), DT-4 issue permission (4 roles), DT-2 reason rule through the generator's `context`.
 * **State transitions** — all 7 valid transitions + 11 invalid ones (≥ 1 from every state); read-back of status, stock and transactions after each.
 * **Repeated requests** — repeat issue (404, still one transaction), repeat approval (no duplicate notifications), double create (two distinct numbers — no idempotency key).
 * **Cross-workflow** — WF1 approve → WF2 issue (shared `status`, `stock`, transaction `balance_after`, read back through the item API); WF1 reject → WF2 refused; send back → resubmit → approve → issue.
 
 ## 2. API coverage criteria (Martín-López et al., 2019)
-`reports/api_coverage.md` — **100 % of every reachable criterion**: paths 9/9, operations 11/11, parameters 22/22, parameter values (enums) 14/14, request content types 5/5, status-code classes 23/23, status codes 25/25, response body properties 28/28, response content types 7/7.
+`reports/api_coverage.md` (674 recorded calls) — **100 % of every reachable criterion**: paths 9/9, operations 11/11, parameters 22/22, parameter values (enums) 14/14, request content types 5/5, status-code classes 23/23, status codes 25/25, response body properties 28/28, response content types 7/7.
 Three documented status codes are **blocked by open defects** and listed separately (not hidden): 403 for a non-Admin `GET`/`POST /issue/` (F3) and 404 for a foreign `update` (F6 — returns 500).
 
 ## 3. Endpoint weaknesses (each: root cause · severity · risk · fix)

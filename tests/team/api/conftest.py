@@ -66,6 +66,11 @@ class ApiClient(requests.Session):
                           allow_redirects=False)
             assert r.status_code == 302, f"login failed for {username}"
 
+    def get(self, url, **kwargs):
+        # requests.Session.get() forces allow_redirects=True; keep the endpoint's own status instead
+        kwargs.setdefault("allow_redirects", False)
+        return super().get(url, **kwargs)
+
     def request(self, method, url, *args, **kwargs):
         if not url.startswith("http"):
             url = self.base + url
