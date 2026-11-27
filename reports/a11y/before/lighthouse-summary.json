@@ -1,0 +1,28 @@
+[
+  {
+    "screen": "hod-approval",
+    "url": "/requisition/1/hod-approval/",
+    "finalUrl": "http://127.0.0.1:8010/requisition/1/hod-approval/",
+    "accessibility": 92,
+    "bestPractices": 100,
+    "seo": 90,
+    "failedAudits": [
+      "heading-order",
+      "link-name",
+      "meta-description"
+    ]
+  },
+  {
+    "screen": "issue-items",
+    "url": "/requisition/4/issue/",
+    "finalUrl": "http://127.0.0.1:8010/requisition/4/issue/",
+    "accessibility": 92,
+    "bestPractices": 100,
+    "seo": 90,
+    "failedAudits": [
+      "heading-order",
+      "link-name",
+      "meta-description"
+    ]
+  }
+]
