@@ -1,0 +1,245 @@
+openapi: 3.1.0
+info:
+  title: HPL IMS - Requisition workflow HTTP interface (WF1 HOD approval, WF2 Admin issue)
+  version: 1.0.0
+  description: |
+    Written by the test team from the source code at upstream commit 549113c and the README.
+    The application has no machine-readable spec of its own.
+
+    ORACLE RULE: `responses` describe the EXPECTED behaviour from docs/01_test_basis.md.
+    Where the baseline behaves differently the observed response is recorded in `x-observed`
+    together with the defect id. Tests always assert the expected behaviour.
+
+    Constraint extensions read by tests/team/datagen/generator.py:
+      x-maximum-ref   upper limit that depends on seeded data, resolved at test time
+      x-trim          the server strips whitespace before checking length
+      x-no-limit      the field has no documented limit (no BVA; one long-value case)
+servers:
+  - url: http://127.0.0.1:8000
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sessionid
+      description: Django session from POST /login/. Unsafe methods also need the csrftoken cookie and the X-CSRFToken header (JSON) or csrfmiddlewaretoken field (forms).
+  schemas:
+    LineInput:
+      type: object
+      required: [id, qty]
+      properties:
+        id:
+          type: integer
+          description: "Item primary key"
+          x-ref-domain: {active_item: valid, inactive_item: invalid, unknown_item: invalid}
+        qty: {type: integer, minimum: 1, description: "Quantity requested"}
+        uom: {type: string, default: pcs, enum: [pcs, box, pack, ream, kg, liter, dozen, set, roll, bottle]}
+        notes: {type: string, x-no-limit: true}
+    RequisitionInput:
+      type: object
+      required: [purpose, items]
+      properties:
+        purpose: {type: string, minLength: 10, x-trim: true}
+        notes: {type: string, x-no-limit: true}
+        items: {type: array, minItems: 1, items: {$ref: "#/components/schemas/LineInput"}}
+    ApiOk:
+      type: object
+      required: [success, message, requisition_id, requisition_number]
+      properties:
+        success: {const: true}
+        message: {type: string}
+        requisition_id: {type: integer}
+        requisition_number: {type: string, pattern: "^REQ-[0-9]{8}-[0-9]{4}$"}
+    ApiError:
+      type: object
+      required: [success, error]
+      properties:
+        success: {const: false}
+        error: {type: string}
+    ItemRow:
+      type: object
+      required: [id, material_code, description, item_type, uom, quantity_total, location]
+      properties:
+        id: {type: integer}
+        material_code: {type: string}
+        description: {type: string}
+        item_type: {type: string, enum: [stationery, housekeeping]}
+        uom: {type: string}
+        quantity_total: {type: integer, minimum: 0}
+        location: {type: string}
+  parameters:
+    pk:
+      name: pk
+      in: path
+      required: true
+      schema: {type: integer, minimum: 1}
+      description: Requisition primary key
+security:
+  - sessionCookie: []
+paths:
+  /login/:
+    post:
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: {type: string, minLength: 1}
+                password: {type: string, minLength: 1}
+      responses:
+        "302": {description: "Valid credentials - session cookie set, redirect to the role dashboard"}
+        "200": {description: "Invalid credentials - login page re-rendered with an error message"}
+
+  /requisition/api/create/:
+    post:
+      operationId: createRequisition
+      summary: FR-14 - initiator creates a requisition (precondition of WF1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RequisitionInput"}
+      responses:
+        "200": {description: "Created in pending_hod", content: {application/json: {schema: {$ref: "#/components/schemas/ApiOk"}}}}
+        "400":
+          description: Validation error (one message per rule) or malformed JSON; nothing persisted
+          content: {application/json: {schema: {$ref: "#/components/schemas/ApiError"}}}
+          x-observed: "Unknown item id -> 500 'Server error: ...' and an orphan requisition without lines (F6). Non-integer qty -> 500 TypeError (F6)."
+        "302": {description: "Not logged in (redirect to /login/)", x-expected-instead: "401 JSON (assumption A5)"}
+        "405": {description: "Any method other than POST"}
+
+  /requisition/{pk}/api/update/:
+    post:
+      operationId: updateRequisition
+      summary: FR-15 - initiator revises / resubmits own requisition (sent_back -> pending_hod)
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RequisitionInput"}
+      responses:
+        "200": {description: "Updated (status unchanged) or resubmitted (status -> pending_hod)", content: {application/json: {schema: {$ref: "#/components/schemas/ApiOk"}}}}
+        "400": {description: "Validation error, or status not in draft/pending_hod/sent_back", content: {application/json: {schema: {$ref: "#/components/schemas/ApiError"}}}}
+        "404": {description: "Not the caller's requisition", x-observed: "500 - the Http404 is caught by the broad except (F6 family)"}
+        "405": {description: "Any method other than POST"}
+
+  /requisition/{pk}/hod-approval/:
+    get:
+      operationId: getApprovalScreen
+      summary: FR-02 - approval screen (WF1 key screen)
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      responses:
+        "200": {description: "Caller is HOD of the initiator's department and R is pending_hod (BR-2)"}
+        "404": {description: "Any other caller/state combination", x-observed: "Admin gets 200 for every state (F4)"}
+        "302": {description: "Not logged in"}
+    post:
+      operationId: hodDecision
+      summary: WF1 - FR-03/04/05 HOD decision
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [action, status]
+              properties:
+                action: {type: string, enum: [authorized, sent_back, rejected]}
+                status: {type: string, enum: [pending_hod, draft, sent_back, authorized, rejected, issued, cancelled], description: "Hidden model field the page always posts (current status); overwritten from action"}
+                notes: {type: string, x-no-limit: true}
+                rejection_reason: {type: string, minLength: 1, x-required-if: {action: rejected}}
+                sent_back_reason: {type: string, minLength: 1, x-required-if: {action: sent_back}}
+      responses:
+        "302": {description: "Decision saved; redirect to /requisition/hod/. Read-back: status, hod_approver, hod_action_date, notifications"}
+        "200": {description: "Form re-rendered with a field error (invalid action or missing reason); nothing persisted"}
+        "404": {description: "Not in scope (BR-2) or not pending (BR-3)", x-observed: "Admin may decide on ANY state, e.g. issued -> authorized (F4)"}
+
+  /requisition/{pk}/issue/:
+    get:
+      operationId: getIssueScreen
+      summary: FR-08 - issue screen (WF2 key screen)
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      responses:
+        "200": {description: "Caller is Admin and R is authorized"}
+        "403": {description: "Caller is not an Admin", x-observed: "200 for every logged-in role (F3)"}
+        "404": {description: "R is not authorized"}
+    post:
+      operationId: issueItems
+      summary: WF2 - FR-09..FR-13 issue items (inline formset, prefix 'items')
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [items-TOTAL_FORMS, items-INITIAL_FORMS, items-0-id, items-0-quantity_issued]
+              properties:
+                items-TOTAL_FORMS: {type: integer, description: "Number of line forms (= number of lines)"}
+                items-INITIAL_FORMS: {type: integer}
+                items-0-id:
+                  type: integer
+                  description: "Line item pk (one block per line: items-N-*)"
+                  x-ref-domain: {own_line: valid, other_requisition_line: invalid, unknown_line: invalid}
+                items-0-quantity_issued:
+                  type: integer
+                  minimum: 0
+                  x-maximum-ref: [line.quantity_requested, item.quantity_total]
+                  description: "BR-1: 0 <= qty <= min(requested, stock)"
+                items-0-notes: {type: string, x-no-limit: true}
+      responses:
+        "302": {description: "Issued; redirect to /requisition/admin/. Read-back: status issued, stock reduced, one outward Transaction per issued line", x-observed: "Unchanged (pre-filled) quantities are not saved - status issued but stock NOT reduced and no Transaction (F13)"}
+        "200": {description: "Rule rejection (BR-1) - page re-rendered with 'Please correct the errors: ...'; nothing persisted"}
+        "403": {description: "Caller is not an Admin", x-observed: "HOD/initiator can issue (F3)"}
+        "404": {description: "R not authorized (already issued, pending, rejected, ...)"}
+
+  /requisition/{pk}/:
+    get:
+      operationId: getRequisition
+      summary: Read-back of a requisition (detail page)
+      parameters: [{$ref: "#/components/parameters/pk"}]
+      responses:
+        "200": {description: "Visible to the caller (initiator own, HOD own department, Admin all)"}
+        "404": {description: "Not visible to the caller"}
+
+  /requisition/api/items/:
+    get:
+      operationId: itemSuggestions
+      summary: Read-back of item stock (active items, max 20)
+      parameters:
+        - {name: q, in: query, required: false, schema: {type: string, x-no-limit: true}}
+        - {name: type, in: query, required: false, schema: {type: string, enum: [stationery, housekeeping]}}
+      responses:
+        "200": {description: "List of items", content: {application/json: {schema: {type: array, maxItems: 20, items: {$ref: "#/components/schemas/ItemRow"}}}}}
+
+  /inventory/api/item-details/:
+    get:
+      operationId: itemDetails
+      summary: Item look-up by material code (max 10)
+      parameters:
+        - {name: q, in: query, required: false, schema: {type: string, x-no-limit: true}}
+        - {name: type, in: query, required: false, schema: {type: string, enum: [stationery, housekeeping]}}
+      responses:
+        "200": {description: "List of items", content: {application/json: {schema: {type: array, maxItems: 10, items: {$ref: "#/components/schemas/ItemRow"}}}}, x-observed: "Any non-empty type -> 500 TypeError (F5)"}
+
+  /api/notifications/:
+    get:
+      operationId: notifications
+      summary: Read-back of the caller's unread notifications (max 10)
+      responses:
+        "200":
+          description: Unread notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notifications, unread_count]
+                properties:
+                  notifications: {type: array, maxItems: 10}
+                  unread_count: {type: integer, minimum: 0}
